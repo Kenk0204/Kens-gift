@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>💋 Make Ken Horny — RPG</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg:     #1a0a2e;
+  --panel:  #0d0520;
+  --border: #ff6eb4;
+  --pink:   #ff6eb4;
+  --red:    #ff2d6b;
+  --gold:   #ffd700;
+  --cyan:   #00ffe7;
+  --white:  #f0e6ff;
+  --dim:    #7050a0;
+  --green:  #44ff88;
+  --orange: #ff9944;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; image-rendering: pixelated; }
+
+/* Touch fix */
+body { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+
+body {
+  background: var(--bg);
+  font-family: 'Press Start 2P', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+}
+
+/* ── SCANLINES overlay ── */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events:none; z-index:999;
+}
+
+#game {
+  width: min(560px, 100vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+/* ── BATTLE SCENE ── */
+#scene {
+  width: 100%;
+  height: 260px;
+  background: linear-gradient(180deg, #0a0320 0%, #1a0845 60%, #2a0d5e 100%);
+  border: 3px solid var(--border);
+  border-bottom: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Pixel stars in scene */
+#scene::before {
+  content:'';
+  position:absolute; inset:0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 10%, #ffb7d5 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 30%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 15%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 92% 40%, #ffb7d5 0%, transparent 100%),
+    radial-gradient(1px 1px at 20% 50%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 50%, #fff 0%, transparent 100%),
+    radial-gradient(2px 2px at 45% 8%,  #ffd700 0%, transparent 100%);
+}
+
+/* Ground */
+#scene::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0;
+  height: 32px;
+  background: repeating-linear-gradient(90deg, #1a0845 0px, #1a0845 16px, #210a55 16px, #210a55 32px);
+  border-top: 3px solid #b44fff;
+}
+
+#enemy-side {
+  position: absolute;
+  top: 20px; right: 60px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+
+#enemy-label {
+  font-size: 7px; color: var(--white);
+  text-shadow: 0 0 6px var(--pink);
+}
+
+/* Ken pixel sprite container */
+#ken-sprite {
+  width: 80px; height: 96px;
+  position: relative;
+  animation: kenIdle 0.8s steps(1) infinite;
+}
+
+@keyframes kenIdle {
+  0%,100% { transform: translateY(0px); }
+  50%     { transform: translateY(-3px); }
+}
+
+#ken-sprite.shake {
+  animation: kenShake 0.4s steps(1);
+}
+@keyframes kenShake {
+  0%,100%{ transform: translateX(0); }
+  20%{ transform: translateX(-6px) rotate(-3deg); }
+  40%{ transform: translateX(6px) rotate(3deg); }
+  60%{ transform: translateX(-4px); }
+  80%{ transform: translateX(4px); }
+}
+
+#ken-sprite.blush {
+  animation: kenBlush 0.6s steps(1);
+  filter: brightness(1.3) saturate(1.5);
+}
+@keyframes kenBlush {
+  0%,100%{ filter: brightness(1) saturate(1); }
+  50%    { filter: brightness(1.4) saturate(2) hue-rotate(10deg); }
+}
+
+#player-side {
+  position: absolute;
+  bottom: 38px; left: 60px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+
+#player-label {
+  font-size: 7px; color: var(--cyan);
+  text-shadow: 0 0 6px var(--cyan);
+}
+
+#cha-sprite {
+  width: 72px; height: 88px;
+  position: relative;
+  animation: chaIdle 1s steps(1) infinite;
+}
+
+@keyframes chaIdle {
+  0%,100%{ transform: translateY(0); }
+  50%    { transform: translateY(-2px); }
+}
+
+#cha-sprite.attack {
+  animation: chaAttack 0.5s steps(1);
+}
+@keyframes chaAttack {
+  0%,100%{ transform: translateX(0) scaleX(1); }
+  30%    { transform: translateX(30px) scaleX(1.2); }
+  60%    { transform: translateX(20px); }
+}
+
+/* Floating damage/effect text */
+.float-text {
+  position: absolute;
+  font-size: 9px;
+  font-family: 'Press Start 2P', monospace;
+  pointer-events: none;
+  animation: floatUp 1.4s ease-out forwards;
+  z-index: 50;
+  text-shadow: 2px 2px 0 #000;
+}
+@keyframes floatUp {
+  0%   { opacity:1; transform: translateY(0) scale(1); }
+  100% { opacity:0; transform: translateY(-70px) scale(0.7); }
+}
+
+/* Level badge */
+#level-badge {
+  position: absolute;
+  top: 10px; left: 12px;
+  font-size: 7px; color: var(--gold);
+  text-shadow: 0 0 8px var(--gold);
+  background: #0a031888;
+  padding: 4px 8px;
+  border: 1px solid var(--gold);
+}
+
+/* Round badge */
+#round-badge {
+  position: absolute;
+  top: 10px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 7px; color: var(--pink);
+  text-shadow: 0 0 8px var(--pink);
+  white-space: nowrap;
+}
+
+/* ── STATUS BOX (Ken's gauge) ── */
+#status-box {
+  border: 3px solid var(--border);
+  border-top: 2px solid #b44fff;
+  border-bottom: none;
+  background: var(--panel);
+  padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+#ken-name-row {
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+#ken-name { font-size: 9px; color: var(--white); }
+#ken-level-txt { font-size: 7px; color: var(--gold); }
+
+.gauge-row { display: flex; flex-direction: column; gap: 3px; }
+.gauge-label { font-size: 6px; color: var(--dim); }
+
+.gauge-bar {
+  height: 14px;
+  background: #0a031a;
+  border: 2px solid var(--dim);
+  position: relative;
+  overflow: hidden;
+}
+.gauge-fill {
+  height: 100%;
+  transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative;
+}
+.gauge-fill::after {
+  content:'';
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  background: repeating-linear-gradient(90deg, transparent 0px, transparent 8px, rgba(255,255,255,0.15) 8px, rgba(255,255,255,0.15) 10px);
+}
+
+#horny-fill {
+  background: linear-gradient(90deg, #ff2d6b, #ff6eb4, #ffd700);
+  box-shadow: 0 0 10px #ff6eb4;
+}
+#xp-fill    { background: linear-gradient(90deg, #44ff88, #00ffe7); }
+
+.gauge-txt {
+  position: absolute; right:4px; top:50%;
+  transform: translateY(-50%);
+  font-size: 6px; color: #fff; mix-blend-mode: difference;
+}
+
+/* ── DIALOGUE BOX ── */
+#dialogue-box {
+  border: 3px solid var(--border);
+  border-top: 2px solid #b44fff;
+  border-bottom: none;
+  background: var(--panel);
+  padding: 10px 14px;
+  min-height: 52px;
+  position: relative;
+}
+
+#dialogue-text {
+  font-size: 8px;
+  color: var(--white);
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+#dialogue-cursor {
+  display: inline-block;
+  width: 8px; height: 12px;
+  background: var(--white);
+  animation: blink 0.6s steps(1) infinite;
+  vertical-align: middle;
+  margin-left: 3px;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ── MENU ── */
+#menu-box {
+  border: 3px solid var(--border);
+  border-top: 2px solid #6a2090;
+  background: var(--panel);
+  padding: 10px 14px 14px;
+}
+
+#menu-title {
+  font-size: 7px; color: var(--dim);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+/* Tab row */
+#tab-row {
+  display: flex; gap: 4px; margin-bottom: 10px;
+}
+
+.tab {
+  flex: 1;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  padding: 5px 0;
+  border: 2px solid var(--dim);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.1s;
+  -webkit-appearance: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tab.active {
+  border-color: var(--pink);
+  color: var(--pink);
+  background: #2a0a3e;
+  box-shadow: 0 0 8px var(--pink)44;
+}
+.tab:hover:not(.active) { border-color: var(--white); color: var(--white); }
+
+/* Action grid */
+#action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.action-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  padding: 8px 6px;
+  border: 2px solid var(--dim);
+  background: #0d0520;
+  color: var(--white);
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.6;
+  transition: all 0.08s;
+  position: relative;
+  overflow: hidden;
+  -webkit-appearance: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.action-btn:hover:not(:disabled) {
+  border-color: var(--pink);
+  color: var(--pink);
+  background: #1a0535;
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px var(--pink)44;
+}
+.action-btn:active:not(:disabled) { transform: translateY(1px); }
+.action-btn:disabled {
+  opacity: 0.35; cursor: not-allowed;
+}
+.action-btn .cost {
+  font-size: 5px;
+  color: var(--gold);
+  display: block;
+  margin-top: 3px;
+}
+.action-btn .emoji { font-size: 12px; }
+
+/* Item bag */
+#item-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+}
+
+.item-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  padding: 7px 4px;
+  border: 2px solid var(--dim);
+  background: #0d0520;
+  color: var(--white);
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.8;
+  transition: all 0.08s;
+  -webkit-appearance: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.item-btn:hover:not(:disabled) {
+  border-color: var(--gold); color: var(--gold);
+  background: #1a0535;
+}
+.item-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.item-btn .qty { font-size: 5px; color: var(--dim); display:block; }
+
+/* ── OVERLAY SCREENS ── */
+.full-overlay {
+  position: fixed; inset:0;
+  background: rgba(10,1,24,0.95);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px; z-index: 100;
+}
+.full-overlay h1 {
+  font-size: 16px; color: var(--pink);
+  text-shadow: 0 0 20px var(--pink), 2px 2px 0 #8b0057;
+  text-align: center; line-height: 1.8;
+  animation: titlePulse 1s ease-in-out infinite;
+}
+@keyframes titlePulse {
+  0%,100%{ filter: brightness(1); }
+  50%    { filter: brightness(1.4); }
+}
+.full-overlay p {
+  font-size: 7px; color: var(--white);
+  text-align: center; line-height: 2.4;
+}
+.start-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px; padding: 12px 24px;
+  background: transparent;
+  border: 2px solid var(--pink);
+  color: var(--pink); cursor: pointer;
+  box-shadow: 0 0 16px var(--pink)66;
+  animation: btnpulse 1.2s ease-in-out infinite;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  position: relative;
+  z-index: 10;
+}
+.start-btn:hover { background: var(--pink); color: var(--bg); }
+@keyframes btnpulse {
+  0%,100%{ box-shadow: 0 0 10px var(--pink)44; }
+  50%    { box-shadow: 0 0 28px var(--pink)cc; }
+}
+
+/* BURST overlay */
+#burst-overlay {
+  position: fixed; inset:0;
+  background: #fff;
+  z-index:200; pointer-events:none;
+  opacity:0;
+  animation: none;
+}
+#burst-overlay.go {
+  animation: burstFlash 0.8s ease-out forwards;
+}
+@keyframes burstFlash {
+  0%  { opacity:1; }
+  100%{ opacity:0; }
+}
+
+/* Pixel hearts floating */
+.pixel-heart {
+  position: fixed;
+  pointer-events:none;
+  z-index:150;
+  font-size:20px;
+  animation: heartFloat 2.5s ease-out forwards;
+}
+@keyframes heartFloat {
+  0%  { opacity:1; transform: translateY(0) rotate(0deg) scale(1); }
+  100%{ opacity:0; transform: translateY(-250px) rotate(20deg) scale(0.3); }
+}
+
+/* XP popup */
+#xp-popup {
+  position: absolute;
+  bottom: 5px; right: 10px;
+  font-size: 7px; color: var(--green);
+  text-shadow: 0 0 6px var(--green);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events:none;
+}
+
+/* Pixel Ken Canvas */
+#ken-canvas { display:block; }
+#cha-canvas { display:block; }
+
+
+
+#bday-screen {
+  position: fixed; inset:0;
+  background: rgba(10,1,24,0.98);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px; z-index: 200;
+}
+
+#bday-hearts {
+  font-size: 28px;
+  animation: bdayHeartBounce 1.2s ease-in-out infinite;
+}
+@keyframes bdayHeartBounce {
+  0%,100%{ transform: scale(1); }
+  50%    { transform: scale(1.25); }
+}
+
+#bday-title {
+  font-size: 11px;
+  color: var(--gold);
+  text-shadow: 0 0 18px var(--gold), 2px 2px 0 #8b5e00;
+  text-align: center;
+  line-height: 2;
+  animation: titlePulse 1s ease-in-out infinite;
+}
+
+#bday-msg-box {
+  border: 2px solid var(--pink);
+  background: #0d0520;
+  padding: 18px 22px;
+  max-width: 420px;
+  box-shadow: 0 0 24px var(--pink)44;
+}
+
+#bday-msg {
+  font-size: 7px;
+  color: var(--white);
+  line-height: 2.5;
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+#bday-sig {
+  font-size: 7px;
+  color: var(--pink);
+  text-align: center;
+  text-shadow: 0 0 8px var(--pink);
+  margin-top: 14px;
+}
+
+
+/* ── ROMANTIC ARCADE START SCREEN ── */
+#start-screen {
+  background: #0a0118 !important;
+  overflow: hidden;
+}
+
+#ss-stars {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 8%  12%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 22% 8%,  #ffb7d5 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 18%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 6%,  #ffd700 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 14%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 9%,  #ffb7d5 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 40%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 35%, #ffb7d5 0%, transparent 100%),
+    radial-gradient(1px 1px at 82% 42%, #fff 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 70%, #ffd700 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 75%, #ffb7d5 0%, transparent 100%),
+    radial-gradient(1px 1px at 92% 68%, #fff 0%, transparent 100%),
+    radial-gradient(2px 2px at 45% 55%, #ff6eb4 0%, transparent 100%),
+    radial-gradient(2px 2px at 18% 82%, #ffd700 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 88%, #fff 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Scanline overlay on start screen */
+#start-screen::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 6px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+#ss-title-wrap {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  border: 3px solid var(--pink);
+  box-shadow: 0 0 40px var(--pink)66, inset 0 0 30px rgba(255,110,180,0.07);
+  padding: 24px 32px;
+  background: rgba(10,1,24,0.85);
+}
+
+#ss-sub {
+  font-size: 7px;
+  color: var(--cyan);
+  text-shadow: 0 0 10px var(--cyan);
+  letter-spacing: 2px;
+  animation: ssSubBlink 1.4s steps(1) infinite;
+}
+@keyframes ssSubBlink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+#ss-logo { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+#ss-logo-top {
+  font-size: 18px;
+  color: var(--white);
+  text-shadow: 2px 2px 0 #8b0057, 0 0 20px var(--pink);
+  letter-spacing: 4px;
+}
+#ss-logo-mid {
+  font-size: 48px;
+  color: var(--pink);
+  text-shadow: 4px 4px 0 #8b0057, 0 0 40px var(--pink), 0 0 80px var(--pink)66;
+  letter-spacing: 8px;
+  animation: logoGlow 2s ease-in-out infinite;
+  line-height: 1;
+}
+@keyframes logoGlow {
+  0%,100% { text-shadow: 4px 4px 0 #8b0057, 0 0 30px var(--pink), 0 0 60px var(--pink)66; }
+  50%     { text-shadow: 4px 4px 0 #8b0057, 0 0 60px var(--pink), 0 0 120px var(--pink)99; filter: brightness(1.3); }
+}
+#ss-logo-bot {
+  font-size: 18px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 #7a5000, 0 0 16px var(--gold);
+  letter-spacing: 3px;
+}
+
+#ss-tagline {
+  font-size: 7px;
+  color: var(--dim);
+  letter-spacing: 3px;
+  font-style: italic;
+}
+
+#ss-hearts-row {
+  position: relative; z-index: 2;
+  display: flex; gap: 14px;
+}
+.ss-heart {
+  font-size: 18px;
+  color: var(--pink);
+  text-shadow: 0 0 10px var(--pink);
+  animation: ssHeartPop 1.5s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes ssHeartPop {
+  0%,100% { transform: scale(1);   opacity: 0.6; }
+  50%     { transform: scale(1.4); opacity: 1;   }
+}
+
+#ss-credit {
+  position: relative; z-index: 2;
+  font-size: 6px;
+  color: var(--dim);
+  letter-spacing: 2px;
+}
+
+/* Start btn override for insert coin style */
+#start-btn {
+  position: relative; z-index: 2;
+  font-size: 11px !important;
+  padding: 16px 36px !important;
+  border-color: var(--gold) !important;
+  color: var(--gold) !important;
+  box-shadow: 0 0 20px var(--gold)88 !important;
+  letter-spacing: 2px;
+  animation: coinPulse 1s ease-in-out infinite !important;
+}
+@keyframes coinPulse {
+  0%,100% { box-shadow: 0 0 12px var(--gold)66; }
+  50%     { box-shadow: 0 0 36px var(--gold)cc; filter: brightness(1.2); }
+}
+
+@media (orientation: portrait) and (max-width: 1024px) {
+  body { align-items: flex-start; overflow-y: auto; }
+
+  #game {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  #scene { height: 220px; }
+  #enemy-side { right: 40px; top: 16px; }
+  #player-side { left: 40px; bottom: 34px; }
+
+  /* Bigger tap targets */
+  .action-btn {
+    font-size: 9px;
+    padding: 16px 10px;
+    min-height: 60px;
+  }
+  .action-btn .cost { font-size: 7px; margin-top: 6px; }
+
+  .item-btn {
+    font-size: 7px;
+    padding: 14px 6px;
+    min-height: 58px;
+  }
+  .item-btn .qty { font-size: 6px; }
+
+  .tab { font-size: 7px; padding: 10px 0; min-height: 40px; }
+  .start-btn { font-size: 12px; padding: 18px 32px; }
+
+  #dialogue-text { font-size: 9px; line-height: 2; }
+  #menu-box { padding: 12px 12px 18px; }
+  #tab-row { gap: 6px; margin-bottom: 12px; }
+  #action-grid { gap: 8px; }
+
+  #bday-msg { font-size: 8px; line-height: 3; }
+  #bday-sig { font-size: 8px; }
+  #bday-msg-box { padding: 22px 18px; margin: 0 14px; }
+  #bday-title { font-size: 14px; }
+}
+
+/* ══════════════════════════════════════════
+   LANDSCAPE (sideways) — height-constrained
+══════════════════════════════════════════ */
+@media (orientation: landscape) and (max-height: 900px) {
+  body {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  #game {
+    width: min(700px, 100vw);
+    margin: 0 auto;
+  }
+
+  #scene { height: 190px; }
+  #enemy-side { right: 50px; top: 12px; }
+  #player-side { left: 50px; bottom: 28px; }
+
+  /* In landscape, use 3-col action grid to save vertical space */
+  #action-grid { grid-template-columns: 1fr 1fr 1fr !important; gap: 6px; }
+
+  .action-btn {
+    font-size: 7px;
+    padding: 11px 6px;
+    min-height: 50px;
+  }
+  .action-btn .cost { font-size: 5px; margin-top: 4px; }
+
+  .item-btn {
+    font-size: 6px;
+    padding: 10px 4px;
+    min-height: 48px;
+  }
+
+  .tab { font-size: 6px; padding: 8px 0; min-height: 32px; }
+  .start-btn { font-size: 10px; padding: 14px 26px; }
+
+  #dialogue-box { min-height: 40px; padding: 8px 12px; }
+  #dialogue-text { font-size: 8px; line-height: 1.8; }
+  #status-box { padding: 7px 12px; gap: 4px; }
+  .gauge-bar { height: 12px; }
+  #menu-box { padding: 8px 10px 12px; }
+  #tab-row { gap: 5px; margin-bottom: 8px; }
+
+  #bday-msg { font-size: 7px; line-height: 2.4; }
+  #bday-msg-box { padding: 16px 20px; margin: 0 10px; max-width: 500px; }
+  #bday-title { font-size: 12px; }
+  #bday-screen { gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div id="burst-overlay"></div>
+
+<!-- BIRTHDAY MESSAGE SCREEN -->
+<div class="full-overlay" id="bday-screen" style="background:rgba(10,1,24,0.98);z-index:200;">
+  <div id="bday-hearts">💕 🎂 💕</div>
+  <div id="bday-title">🎉 HAPPY BIRTHDAY 🎉</div>
+  <div id="bday-msg-box">
+    <div id="bday-msg">hey babe i made something
+for your birthday!
+
+its still unfinished tho,
+its still a beta, sorry i
+wasnt able to finish it
+in time.
+
+but for now i hope u like
+the early version of
+what i made.</div>
+    <div id="bday-sig">as always and forever
+i love you my love!!!!!! 💖</div>
+  </div>
+  <button class="start-btn" id="bday-btn">▶ OPEN YOUR GIFT</button>
+</div>
+
+<!-- START SCREEN -->
+<div class="full-overlay" id="start-screen">
+  <div id="ss-stars"></div>
+  <div id="ss-title-wrap">
+    <div id="ss-sub">✦ PLAYER 1 PRESS START ✦</div>
+    <div id="ss-logo">
+      <div id="ss-logo-top">💋 MAKE</div>
+      <div id="ss-logo-mid">KEN</div>
+      <div id="ss-logo-bot">HORNY 💋</div>
+    </div>
+    <div id="ss-tagline">~ an arcade love story ~</div>
+  </div>
+  <div id="ss-hearts-row">
+    <span class="ss-heart" style="animation-delay:0s">♥</span>
+    <span class="ss-heart" style="animation-delay:0.3s">♥</span>
+    <span class="ss-heart" style="animation-delay:0.6s">♥</span>
+    <span class="ss-heart" style="animation-delay:0.9s">♥</span>
+    <span class="ss-heart" style="animation-delay:1.2s">♥</span>
+  </div>
+  <button class="start-btn" id="start-btn">▶ INSERT COIN</button>
+  <div id="ss-credit">© CHA &amp; KEN FOREVER</div>
+</div>
+
+<!-- WIN SCREEN -->
+<div class="full-overlay" id="win-screen" style="display:none">
+  <h1>💥 KEN IS<br>BURSTING! 💥</h1>
+  <p id="win-msg">Cha is absolutely IRRESISTIBLE! 💕<br>Ken never stood a chance! 🔥<br><br>Final Score: <span id="final-score">0</span> pts</p>
+  <button class="start-btn" id="replay-btn">▶ PLAY AGAIN</button>
+</div>
+
+<!-- GAME UI -->
+<div id="game">
+
+  <!-- BATTLE SCENE -->
+  <div id="scene">
+    <div id="level-badge">LVL <span id="lv-txt">1</span></div>
+    <div id="round-badge">ROUND <span id="round-txt">1</span> / 3</div>
+
+    <!-- Ken (enemy side) -->
+    <div id="enemy-side">
+      <div id="enemy-label">KEN</div>
+      <canvas id="ken-canvas" width="80" height="96"></canvas>
+    </div>
+
+    <!-- Cha (player side) -->
+    <div id="player-side">
+      <div id="player-label">CHA</div>
+      <canvas id="cha-canvas" width="72" height="88"></canvas>
+    </div>
+  </div>
+
+  <!-- KEN STATUS -->
+  <div id="status-box">
+    <div id="ken-name-row">
+      <span id="ken-name">KEN ❤</span>
+      <span id="ken-level-txt">LV1 BOYFRIEND</span>
+    </div>
+    <div class="gauge-row">
+      <div class="gauge-label">🔥 HORNY GAUGE</div>
+      <div class="gauge-bar">
+        <div class="gauge-fill" id="horny-fill" style="width:0%"></div>
+        <span class="gauge-txt" id="horny-txt">0/100</span>
+      </div>
+    </div>
+    <div class="gauge-row">
+      <div class="gauge-label">⭐ CHA EXP</div>
+      <div class="gauge-bar" style="border-color:#44ff8888">
+        <div class="gauge-fill" id="xp-fill" style="width:0%"></div>
+        <span class="gauge-txt" id="xp-txt">0/100</span>
+      </div>
+    </div>
+    <div id="xp-popup">+XP!</div>
+  </div>
+
+  <!-- DIALOGUE -->
+  <div id="dialogue-box">
+    <div id="dialogue-text"></div>
+    <span id="dialogue-cursor"></span>
+  </div>
+
+  <!-- MENU -->
+  <div id="menu-box">
+    <div id="menu-title">── CHA'S TURN ──</div>
+    <div id="tab-row">
+      <button class="tab active" data-tab="actions">💃 MOVES</button>
+      <button class="tab" data-tab="flirt">💬 FLIRT</button>
+      <button class="tab" data-tab="items">🎁 GIFTS</button>
+      <button class="tab" data-tab="special">✨ SPECIAL</button>
+    </div>
+    <div id="action-grid"></div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════════
+const AC = new (window.AudioContext||window.webkitAudioContext)({sampleRate: 44100});
+
+function tone(f,s,d,v=0.1,type='square') {
+  const o=AC.createOscillator(), g=AC.createGain();
+  o.connect(g); g.connect(AC.destination);
+  o.type=type; o.frequency.value=f;
+  const t=AC.currentTime+s;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(v,t+0.01);
+  g.gain.linearRampToValueAtTime(0,t+d-0.01);
+  o.start(t); o.stop(t+d);
+}
+
+function sfx(type) {
+  if(type==='hit')    { [330,440,550].forEach((f,i)=>tone(f,i*0.05,0.08,0.1,'square')); }
+  if(type==='heart')  { [523,659,784,1047].forEach((f,i)=>tone(f,i*0.07,0.1,0.09,'square')); }
+  if(type==='item')   { [392,494,587,698].forEach((f,i)=>tone(f,i*0.06,0.09,0.08,'triangle')); }
+  if(type==='level')  { [523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,i*0.08,0.12,0.1,'square')); }
+  if(type==='burst')  { [262,330,392,523,659,784,1047,1319].forEach((f,i)=>tone(f,i*0.06,0.18,0.13,'square')); }
+  if(type==='miss')   { [200,180].forEach((f,i)=>tone(f,i*0.1,0.12,0.08,'sawtooth')); }
+  if(type==='select') { tone(440,0,0.05,0.06,'square'); }
+}
+
+function playBGM_OLD() {
+  const bpm=110, b=60/bpm;
+  const mel=[
+    [392,0],[330,1],[294,2],[330,3],
+    [392,4],[392,5],[392,6.5],
+    [349,8],[349,9],[349,10.5],
+    [392,12],[440,13],[440,14.5],
+    [392,16],[330,17],[294,18],[330,19],
+    [392,20],[392,21],[392,22],[330,23],
+    [294,24],[294,25],[330,26],[294,27],
+    [262,28,2],
+  ];
+  const bas=[
+    [98,0,1.8],[131,2,1.8],[110,4,1.8],[131,6,1.8],
+    [98,8,1.8],[110,10,1.8],[117,12,1.8],[131,14,1.8],
+    [98,16,1.8],[131,18,1.8],[110,20,1.8],[131,22,1.8],
+    [98,24,1.8],[110,26,1.8],[98,28,3.8],
+  ];
+  const total=b*32;
+  function loop(off) {
+    mel.forEach(([f,s,d=0.8])=>tone(f,off+s*b,d*b,0.08,'square'));
+    bas.forEach(([f,s,d])    =>tone(f,off+s*b,d*b,0.07,'triangle'));
+    setTimeout(()=>loop(off+total),(total-0.3)*1000);
+  }
+  loop(0.1);
+}
+
+let bgmStarted = false;
+function playBGM() {
+  if (bgmStarted) return;
+  bgmStarted = true;
+
+  // Romantic love ballad - original melody, slow & emotional
+  // Key of F major, bpm=52, warm & dreamy
+  const bpm = 52, b = 60 / bpm;
+
+  // Create a master gain for overall volume
+  const master = AC.createGain();
+  master.gain.value = 0.9;
+  master.connect(AC.destination);
+
+  // Simple reverb via delay feedback
+  const delay = AC.createDelay(0.8);
+  const delayGain = AC.createGain();
+  delay.delayTime.value = 0.35;
+  delayGain.gain.value = 0.25;
+  delay.connect(delayGain);
+  delayGain.connect(delay);
+  delayGain.connect(master);
+
+  function note(f, s, d, v, type) {
+    const o = AC.createOscillator();
+    const g = AC.createGain();
+    o.connect(g);
+    g.connect(master);
+    g.connect(delay); // send to reverb
+    o.type = type;
+    o.frequency.value = f;
+    const t = AC.currentTime + s;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(v, t + 0.12);
+    g.gain.setValueAtTime(v * 0.85, t + d * 0.6);
+    g.gain.linearRampToValueAtTime(0, t + d);
+    o.start(t); o.stop(t + d + 0.1);
+  }
+
+  // ── MELODY (sine, warm & singable) ──
+  // A phrase: rises gently, full of longing
+  const mel = [
+    [349,0,1.2],[392,1.2,0.6],[440,1.8,1.4],[392,3.2,0.8],
+    [349,4,1.8],[330,5.8,0.6],[294,6.4,1.6],
+    [330,8,1.0],[349,9,0.6],[392,9.6,1.4],[349,11,1.0],
+    [440,12,2.0],[415,14,0.6],[392,14.6,1.4],
+    // B phrase: climbs higher, emotional peak
+    [494,16,1.2],[523,17.2,0.8],[494,18,1.0],[466,19,0.6],[440,19.6,1.4],
+    [466,21,1.8],[440,22.8,0.6],[415,23.4,1.6],
+    // Return: gentle descent, resolution
+    [392,25,1.0],[349,26,0.6],[330,26.6,1.4],[294,28,1.0],
+    [330,29,0.8],[349,29.8,1.0],[392,30.8,1.2],
+    [349,32,3.5],
+  ];
+
+  // ── HARMONY (triangle, soft chord notes) ──
+  const harm = [
+    [220,0,3.8],[261,0,3.8],[175,4,3.8],[220,4,3.8],
+    [196,8,3.8],[247,8,3.8],[220,12,3.8],[277,12,3.8],
+    [247,16,3.8],[294,16,3.8],[220,20,3.8],[277,20,3.8],
+    [196,24,3.8],[247,24,3.8],[175,28,3.8],[220,28,3.8],
+    [175,32,3.8],[220,32,3.8],
+  ];
+
+  // ── BASS (triangle, gentle pulse) ──
+  const bas = [
+    [87,0,1.6],[87,2,1.6],[98,4,1.6],[98,6,1.6],
+    [87,8,1.6],[87,10,1.6],[110,12,1.6],[110,14,1.6],
+    [123,16,1.6],[123,18,1.6],[110,20,1.6],[110,22,1.6],
+    [98,24,1.6],[98,26,1.6],[87,28,1.6],[87,30,1.6],
+    [87,32,3.5],
+  ];
+
+  const total = b * 35.5;
+
+  function loop(off) {
+    mel.forEach(([f,s,d])  => note(f, off+s*b, d*b, 0.22, 'sine'));
+    harm.forEach(([f,s,d]) => note(f, off+s*b, d*b, 0.07, 'triangle'));
+    bas.forEach(([f,s,d])  => note(f, off+s*b, d*b, 0.12, 'triangle'));
+    setTimeout(() => loop(off + total), (total - 0.5) * 1000);
+  }
+  loop(0.2);
+}
+
+
+
+function drawKen(canvas, blushLevel=0) {
+  const c = canvas.getContext('2d');
+  c.clearRect(0,0,80,96);
+  const p = (x,y,w,h,col) => { c.fillStyle=col; c.fillRect(x,y,w,h); };
+
+  // Hair
+  p(20,4,40,8,'#3a1a0a');
+  p(16,8,8,16,'#3a1a0a');
+  p(56,8,8,16,'#3a1a0a');
+  p(20,8,8,4,'#5a2a0a');
+  // Face
+  p(20,12,40,28,'#f5c89a');
+  // Ears
+  p(16,16,6,10,'#f5c89a'); p(58,16,6,10,'#f5c89a');
+  // Eyes
+  const eyeColor = blushLevel > 50 ? '#ff2d6b' : '#2a1a6e';
+  p(26,18,8,8,'#fff'); p(46,18,8,8,'#fff');
+  p(28,20,5,5,eyeColor); p(48,20,5,5,eyeColor);
+  p(29,21,2,2,'#fff'); p(49,21,2,2,'#fff'); // shine
+  // Eyebrows
+  p(25,14,10,3,'#3a1a0a'); p(45,14,10,3,'#3a1a0a');
+  // Nose
+  p(37,26,6,3,'#e0a070');
+  // Mouth - changes with blush
+  if(blushLevel > 70) {
+    p(30,32,20,4,'#e07070'); // big grin
+    p(30,32,4,6,'#e07070'); p(46,32,4,6,'#e07070');
+  } else {
+    p(32,32,16,3,'#c07060');
+    p(32,32,3,5,'#c07060'); p(45,32,3,5,'#c07060');
+  }
+  // Blush cheeks
+  if(blushLevel > 20) {
+    c.globalAlpha = Math.min(0.8, blushLevel/80);
+    p(18,26,10,6,'#ff9999'); p(52,26,10,6,'#ff9999');
+    c.globalAlpha=1;
+  }
+  // Sweat drop if very horny
+  if(blushLevel>80) { p(62,10,4,8,'#88ccff'); p(60,16,8,3,'#88ccff'); }
+
+  // Body / shirt
+  const shirtCol = blushLevel>60?'#ff6060':'#4a6aee';
+  p(22,40,36,32,shirtCol);
+  p(14,40,10,24,'#f5c89a'); // left arm
+  p(56,40,10,24,'#f5c89a'); // right arm
+  // Collar
+  p(28,40,24,6,'#fff');
+  // Pants
+  p(22,72,16,22,'#2a3a8e'); p(42,72,16,22,'#2a3a8e');
+  // Shoes
+  p(20,92,18,8,'#1a1a2e'); p(42,92,18,8,'#1a1a2e');
+  // Heart eyes if max
+  if(blushLevel>=100) {
+    p(26,18,8,8,'#ff2d6b'); p(46,18,8,8,'#ff2d6b');
+    p(27,19,6,6,'#ff6eb4'); p(47,19,6,6,'#ff6eb4');
+  }
+}
+
+function drawCha(canvas, pose=0) {
+  const c = canvas.getContext('2d');
+  c.clearRect(0,0,72,88);
+  const p = (x,y,w,h,col) => { c.fillStyle=col; c.fillRect(x,y,w,h); };
+
+  // Hair
+  p(12,2,48,10,'#1a0a30');
+  p(8,8,8,20,'#1a0a30');
+  p(56,8,8,20,'#1a0a30');
+  p(12,10,16,6,'#3a1a5e'); // highlight
+  // Face
+  p(14,10,44,28,'#f8d4b4');
+  // Ears
+  p(10,14,6,10,'#f8d4b4'); p(56,14,6,10,'#f8d4b4');
+  // Eyes - big cute
+  p(18,16,12,10,'#fff'); p(42,16,12,10,'#fff');
+  p(20,17,8,8,'#2244cc'); p(44,17,8,8,'#2244cc');
+  p(21,18,4,4,'#000'); p(45,18,4,4,'#000');
+  p(22,18,2,2,'#fff'); p(46,18,2,2,'#fff');
+  // Lashes
+  p(18,15,3,2,'#1a0a30'); p(27,15,3,2,'#1a0a30');
+  p(42,15,3,2,'#1a0a30'); p(51,15,3,2,'#1a0a30');
+  // Nose
+  p(34,24,4,3,'#e0a888');
+  // Smile
+  p(26,30,20,3,'#c07888');
+  p(26,30,3,5,'#c07888'); p(43,30,3,5,'#c07888');
+  // Blush
+  p(13,24,8,5,'#ffb0b0'); p(51,24,8,5,'#ffb0b0');
+
+  // Outfit
+  p(16,38,40,30,'#ff6eb4'); // dress top
+  p(8,38,10,22,'#f8d4b4');  // left arm
+  p(54,38,10,22,'#f8d4b4'); // right arm
+  // White collar
+  p(22,38,28,6,'#fff');
+  // Skirt
+  p(12,68,48,16,'#ff9ed4');
+  // Legs
+  p(18,82,12,10,'#f8d4b4'); p(42,82,12,10,'#f8d4b4');
+  // Shoes
+  p(16,90,14,6,'#ff2d6b'); p(42,90,14,6,'#ff2d6b');
+
+  // Pose extras
+  if(pose===1) { // wink - close left eye
+    p(18,16,12,10,'#f8d4b4');
+    p(18,20,12,3,'#1a0a30');
+  }
+  if(pose===2) { // holding gift
+    p(2,48,14,14,'#ff2d6b');
+    p(4,44,10,6,'#ffd700');
+    p(8,40,2,16,'#ffd700');
+  }
+  if(pose===3) { // dance - arm up
+    p(8,28,10,22,'#f8d4b4');
+    p(4,22,10,10,'#f8d4b4');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════
+const kenCanvas = document.getElementById('ken-canvas');
+const chaCanvas = document.getElementById('cha-canvas');
+
+let state = {
+  horny: 0,
+  xp: 0,
+  level: 1,
+  round: 1,
+  score: 0,
+  items: {
+    'Love Potion': 3,
+    'Lingerie 👙': 2,
+    'Chocolate 🍫': 3,
+    'Bouquet 💐': 2,
+    'Perfume ✨': 2,
+    'Poem 📜': 1,
+  },
+  busy: false,
+  activeTab: 'actions'
+};
+
+const ROUNDS = [
+  { name:'Round 1', subtitle:'KEN IS DISTRACTED', maxHorny:100, kenTitle:'LV1 BOYFRIEND', kenMod:1.0 },
+  { name:'Round 2', subtitle:'KEN IS WARMING UP 🔥', maxHorny:100, kenTitle:'LV2 FLUSTERED BF', kenMod:1.3 },
+  { name:'Round 3', subtitle:'KEN IS HOLDING BACK 💦', maxHorny:100, kenTitle:'LV3 DESPERATE BF', kenMod:1.6 },
+];
+
+// Actions per tab per round (power scales with round)
+const ACTIONS = {
+  actions: [
+    { id:'wink',  label:'😉 WINK',    desc:'Slow wink at Ken',       power:[8,12,18],  mp:0,   pose:1, color:'#ff6eb4' },
+    { id:'hug',   label:'🤗 HUG',     desc:'Tight warm hug',         power:[12,16,22], mp:0,   pose:0, color:'#ff9ed4' },
+    { id:'kiss',  label:'💋 KISS',    desc:'A soft sweet kiss',       power:[20,26,36], mp:0,   pose:0, color:'#ff2d6b' },
+    { id:'dance', label:'💃 DANCE',   desc:'Sensual dance move',      power:[15,22,30], mp:0,   pose:3, color:'#b44fff' },
+  ],
+  flirt: [
+    { id:'compliment', label:'"U LOOK HOT"',  desc:'Steamy compliment',   power:[10,14,20], mp:0, pose:0, color:'#ff6eb4' },
+    { id:'whisper',    label:'"COME HERE..."', desc:'Whisper in ear',      power:[14,20,28], mp:0, pose:1, color:'#ff2d6b' },
+    { id:'stare',      label:'👀 STARE',       desc:'Intense eye contact', power:[9,13,18],  mp:0, pose:0, color:'#ffd700' },
+    { id:'tease',      label:'😏 TEASE',       desc:'Playful teasing',     power:[18,24,34], mp:0, pose:3, color:'#b44fff' },
+  ],
+  items: [], // dynamically built
+  special: [
+    { id:'combo',   label:'⚡ CHARM COMBO',   desc:'3 moves at once!',    power:[35,48,65], mp:0, pose:3, color:'#ffd700', cooldown:3 },
+    { id:'ultimate',label:'💥 IRRESISTIBLE',  desc:'MAXIMUM CUTENESS',    power:[50,70,95], mp:0, pose:1, color:'#ff2d6b', cooldown:5 },
+  ],
+};
+
+// Cooldowns
+let cooldowns = {};
+
+// Dialogue lines
+const DIALOGUES = {
+  wink:       ["Ken blushes... 💕",     "Ken: o-oh...👀",           "Ken: !!!!! 🔥"],
+  hug:        ["Ken melts a little~",   "Ken: ...don't let go 💕",  "Ken: i missed you 🥺"],
+  kiss:       ["Ken's heart races! 💓", "Ken: C-CHA...!!",          "Ken: ...kiss me again 😳"],
+  dance:      ["Ken can't look away~",  "Ken is hypnotized 👀",     "Ken: ...wow 😵‍💫"],
+  compliment: ["Ken scratches head 😳", "Ken: r-really...?? 💕",    "Ken: you're making me blush"],
+  whisper:    ["Ken shivers~ 💋",        "Ken: ...say that again",   "Ken: my ears are HOT 🔥"],
+  stare:      ["Ken looks away shyly",  "Ken: stop looking at me!", "Ken: ok i can't resist 😤"],
+  tease:      ["Ken: HEY!!! 😤",        "Ken: i wanna crack you!! 😤","Ken: ...fine, you win 😩"],
+  combo:      ["TRIPLE COMBO!! 💥💥💥", "Ken: CHAAA!!!! 🔥🔥",       "Ken: OH NO, UR MAKING ME HARD!!! 🔥"],
+  ultimate:   ["CHA USES IRRESISTIBLE!!","Ken: ur gonna make me cum! 💦","KEN IS COMPLETELY GONE 🔥"],
+  'Love Potion':["Ken starts gooning... 😵‍💫", "Ken: I feel strange... 🔥","Ken: what did you give me?!"],
+  'Lingerie 👙':["Ken: OH NO, UR MAKING ME HARD!!! 🔥",  "Ken: C-CHA WHERE DID--",   "Ken: ur gonna make me cum! 💦"],
+  'Chocolate 🍫':["Ken: mmm... 😊",     "Ken blushes while eating~","Ken: this is... really good"],
+  'Bouquet 💐': ["Ken: for me...? 🥺",  "Ken: you're so thoughtful!","Ken: i love you so much 💕"],
+  'Perfume ✨': ["Ken sniffs the air~", "Ken: you smell amazing 😳", "Ken: come closer..."],
+  'Poem 📜':    ["Ken reads it slowly~","Ken: ...this is beautiful","Ken: I'M NOT CRYING U ARE"],
+};
+
+const KEN_RESIST = [
+  "Ken: i'm focused!",
+  "Ken: n-not now...",
+  "Ken: ...maybe later",
+  "Ken: CHA STOP IT",
+  "Ken: i'm trying to resist!",
+  "Ken starts gooning... 😵‍💫",
+  "Ken: i wanna crack you!! 😤",
+];
+
+// ═══════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════
+let dialogueTimeout;
+function setDialogue(text, persistent=false) {
+  clearTimeout(dialogueTimeout);
+  const el = document.getElementById('dialogue-text');
+  const cursor = document.getElementById('dialogue-cursor');
+  el.textContent = text;
+  cursor.style.display = persistent ? 'none' : 'inline-block';
+  if(!persistent) {
+    dialogueTimeout = setTimeout(()=>{
+      el.textContent = getIdleDialogue();
+      cursor.style.display='inline-block';
+    }, 3000);
+  }
+}
+
+function getIdleDialogue() {
+  const r = state.round - 1;
+  const h = state.horny;
+  if(h < 20)  return ["Ken is minding his own business...", "Ken: what are you planning? 👀", "Ken: ...you look cute today 💕"][r];
+  if(h < 40)  return ["Ken: h-hey...don't look at me like that", "Ken is getting flustered~", "Ken: cha... i swear..."][r];
+  if(h < 55)  return ["Ken starts gooning... 😵‍💫", "Ken: i wanna crack you!! 😤", "Ken: i... i can't concentrate 😳"][r];
+  if(h < 70)  return ["Ken: OH NO, UR MAKING ME HARD!!! 🔥", "Ken is barely holding it together~", "Ken: this is your fault!!"][r];
+  if(h < 90)  return ["Ken: ur gonna make me cum! 💦", "Ken: I'M GOING CRAZY 😵", "Ken: CHA I SWEAR TO GOD 🔥"][r];
+  return ["Ken: I CAN'T HOLD BACK 😵🔥", "Ken: ...come here RIGHT NOW 🔥🔥", "Ken: ur gonna make me cum!! 💦🔥"][r];
+}
+
+function spawnFloatText(text, color='#ff6eb4') {
+  const scene = document.getElementById('scene');
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = text;
+  el.style.color = color;
+  el.style.left = (120 + Math.random()*200) + 'px';
+  el.style.top  = (40 + Math.random()*60) + 'px';
+  scene.appendChild(el);
+  setTimeout(()=>el.remove(), 1500);
+}
+
+function spawnHearts(n=5) {
+  for(let i=0;i<n;i++) {
+    setTimeout(()=>{
+      const el = document.createElement('div');
+      el.className='pixel-heart';
+      el.textContent=['💕','💖','💗','❤️','🔥'][Math.floor(Math.random()*5)];
+      el.style.left=(100+Math.random()*350)+'px';
+      el.style.top=(100+Math.random()*200)+'px';
+      el.style.animationDelay=(Math.random()*0.4)+'s';
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),2600);
+    }, i*120);
+  }
+}
+
+function updateGauges() {
+  const hPct = Math.min(100, state.horny);
+  document.getElementById('horny-fill').style.width = hPct+'%';
+  document.getElementById('horny-txt').textContent = Math.floor(state.horny)+'/100';
+
+  const xpPct = Math.min(100, state.xp);
+  document.getElementById('xp-fill').style.width = xpPct+'%';
+  document.getElementById('xp-txt').textContent = Math.floor(state.xp)+'/100';
+
+  document.getElementById('lv-txt').textContent = state.level;
+  document.getElementById('round-txt').textContent = state.round;
+  document.getElementById('ken-level-txt').textContent = ROUNDS[state.round-1].kenTitle;
+
+  // Redraw ken with blush
+  drawKen(kenCanvas, state.horny);
+}
+
+// ═══════════════════════════════════════════════════════
+// TABS + MENU
+// ═══════════════════════════════════════════════════════
+document.getElementById('tab-row').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if(!tab || state.busy) return;
+  sfx('select');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  state.activeTab = tab.dataset.tab;
+  renderMenu();
+});
+
+function renderMenu() {
+  const grid = document.getElementById('action-grid');
+  const tab = state.activeTab;
+
+  if(tab === 'items') {
+    grid.id = 'action-grid';
+    grid.style.gridTemplateColumns = '1fr 1fr 1fr';
+    grid.innerHTML = '';
+    Object.entries(state.items).forEach(([name, qty]) => {
+      const power = getItemPower(name);
+      const btn = document.createElement('button');
+      btn.className = 'item-btn';
+      btn.disabled = qty <= 0 || state.busy;
+      btn.innerHTML = `${name}<span class="qty">x${qty} | +${power}🔥</span>`;
+      btn.onclick = () => useItem(name);
+      grid.appendChild(btn);
+    });
+    return;
+  }
+
+  grid.style.gridTemplateColumns = '1fr 1fr';
+  grid.innerHTML = '';
+  const acts = ACTIONS[tab] || [];
+  acts.forEach(act => {
+    const cd = cooldowns[act.id] || 0;
+    const power = act.power[state.round-1];
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.disabled = state.busy || cd > 0;
+    btn.style.borderColor = cd > 0 ? 'var(--dim)' : act.color;
+    btn.innerHTML = `${act.label}<span class="cost">${cd>0?`CD:${cd}turns`:`+${power}🔥`}</span>`;
+    btn.onclick = () => doAction(act);
+    grid.appendChild(btn);
+  });
+}
+
+function getItemPower(name) {
+  const powers = {
+    'Love Potion':20, 'Lingerie 👙':35, 'Chocolate 🍫':12,
+    'Bouquet 💐':15, 'Perfume ✨':18, 'Poem 📜':25
+  };
+  return Math.floor((powers[name]||10) * ROUNDS[state.round-1].kenMod);
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME ACTIONS
+// ═══════════════════════════════════════════════════════
+function doAction(act) {
+  if(state.busy) return;
+  state.busy = true;
+  sfx('select');
+  setAllButtonsDisabled(true);
+
+  const power = Math.floor(act.power[state.round-1] * state.level * 0.3 + act.power[state.round-1]);
+  const miss = Math.random() < 0.08; // 8% miss
+
+  // Cha attack animation
+  const chaEl = document.getElementById('cha-sprite');
+  // Pose on canvas
+  drawCha(chaCanvas, act.pose || 0);
+  setTimeout(()=>drawCha(chaCanvas,0), 600);
+
+  // Ken react
+  const kenEl = document.getElementById('ken-sprite');
+
+  if(miss) {
+    sfx('miss');
+    spawnFloatText('MISS!', '#888');
+    setDialogue(KEN_RESIST[Math.floor(Math.random()*KEN_RESIST.length)]);
+  } else {
+    sfx('hit');
+    setTimeout(()=>{
+      drawKen(kenCanvas, state.horny);
+      sfx('heart');
+      spawnFloatText(`+${power}🔥`, act.color);
+      spawnHearts(Math.ceil(power/15));
+    }, 200);
+
+    applyHorny(power);
+    // XP gain
+    gainXP(Math.floor(power * 0.6));
+
+    const dialogues = DIALOGUES[act.id] || ["Ken reacts~"];
+    setDialogue(dialogues[Math.min(state.round-1, dialogues.length-1)]);
+  }
+
+  // Cooldown
+  if(act.cooldown) {
+    cooldowns[act.id] = act.cooldown;
+  }
+
+  // Tick cooldowns
+  Object.keys(cooldowns).forEach(k => { if(cooldowns[k]>0) cooldowns[k]--; });
+
+  setTimeout(()=>{
+    state.busy = false;
+    setAllButtonsDisabled(false);
+    renderMenu();
+    checkRoundEnd();
+  }, 900);
+}
+
+function useItem(name) {
+  if(state.busy || state.items[name] <= 0) return;
+  state.busy = true;
+  sfx('item');
+  setAllButtonsDisabled(true);
+  state.items[name]--;
+
+  const power = getItemPower(name);
+  setTimeout(()=>{
+    sfx('heart');
+    spawnFloatText(`+${power}🔥`, '#ffd700');
+    spawnHearts(Math.ceil(power/10));
+    drawCha(chaCanvas, 2);
+    setTimeout(()=>drawCha(chaCanvas,0),700);
+  }, 150);
+
+  applyHorny(power);
+  gainXP(Math.floor(power*0.5));
+
+  const dialogues = DIALOGUES[name] || ["Ken is affected!"];
+  setDialogue(dialogues[Math.min(state.round-1, dialogues.length-1)]);
+
+  setTimeout(()=>{
+    state.busy=false;
+    setAllButtonsDisabled(false);
+    renderMenu();
+    checkRoundEnd();
+  }, 900);
+}
+
+function applyHorny(amount) {
+  state.horny = Math.min(100, state.horny + amount);
+  state.score += amount;
+  updateGauges();
+}
+
+function gainXP(amount) {
+  state.xp += amount;
+  const popup = document.getElementById('xp-popup');
+  popup.textContent = `+${amount} XP`;
+  popup.style.opacity='1';
+  setTimeout(()=>popup.style.opacity='0', 800);
+
+  if(state.xp >= 100) {
+    state.xp -= 100;
+    state.level++;
+    sfx('level');
+    spawnFloatText(`LEVEL UP! LV${state.level}`, '#ffd700');
+    setDialogue(`Cha leveled up! Now LV${state.level}! ⭐`);
+    updateGauges();
+  }
+}
+
+function setAllButtonsDisabled(val) {
+  document.querySelectorAll('.action-btn,.item-btn,.tab').forEach(b=>b.disabled=val);
+}
+
+function checkRoundEnd() {
+  if(state.horny >= 100) {
+    if(state.round >= 3) {
+      // WIN!
+      setTimeout(()=>triggerBurst(), 400);
+    } else {
+      // Next round
+      state.round++;
+      state.horny = 0;
+      cooldowns = {};
+      sfx('level');
+      spawnHearts(10);
+      const r = ROUNDS[state.round-1];
+      setDialogue(`ROUND ${state.round}! ${r.subtitle}`, true);
+      setTimeout(()=>{
+        setDialogue(getIdleDialogue(), true);
+        updateGauges();
+        renderMenu();
+      }, 2500);
+      updateGauges();
+    }
+  }
+}
+
+function triggerBurst() {
+  sfx('burst');
+  spawnHearts(20);
+
+  const overlay = document.getElementById('burst-overlay');
+  overlay.classList.add('go');
+  setTimeout(()=>overlay.classList.remove('go'), 900);
+
+  // Draw max-blush Ken
+  drawKen(kenCanvas, 100);
+
+  setTimeout(()=>{
+    document.getElementById('final-score').textContent = state.score + ' pts';
+    document.getElementById('win-screen').style.display='flex';
+  }, 1200);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+function initGame() {
+  state = {
+    horny:0, xp:0, level:1, round:1, score:0,
+    items:{
+      'Love Potion':3,'Lingerie 👙':2,'Chocolate 🍫':3,
+      'Bouquet 💐':2,'Perfume ✨':2,'Poem 📜':1,
+    },
+    busy:false, activeTab:'actions'
+  };
+  cooldowns = {};
+  drawKen(kenCanvas, 0);
+  drawCha(chaCanvas, 0);
+  updateGauges();
+  renderMenu();
+  setDialogue(getIdleDialogue(), true);
+}
+
+function bindBtn(id, action) {
+  const btn = document.getElementById(id);
+  let handled = false;
+  btn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    if (handled) return;
+    handled = true;
+    setTimeout(() => handled = false, 600);
+    action();
+  }, {passive: false});
+  btn.addEventListener('click', function() {
+    if (handled) return;
+    action();
+  });
+}
+
+bindBtn('bday-btn', () => {
+  // Aggressive iOS audio unlock
+  AC.resume();
+  // Play a real audible tone first to force iOS to open the audio pipeline
+  const o = AC.createOscillator();
+  const g = AC.createGain();
+  o.connect(g); g.connect(AC.destination);
+  o.frequency.value = 440;
+  g.gain.setValueAtTime(0.001, AC.currentTime); // nearly silent but real
+  g.gain.linearRampToValueAtTime(0, AC.currentTime + 0.1);
+  o.start(AC.currentTime);
+  o.stop(AC.currentTime + 0.1);
+  setTimeout(() => playBGM(), 150);
+  document.getElementById('bday-screen').style.display = 'none';
+});
+
+bindBtn('start-btn', () => {
+  AC.resume();
+  document.getElementById('start-screen').style.display = 'none';
+  initGame();
+});
+
+bindBtn('replay-btn', () => {
+  document.getElementById('win-screen').style.display = 'none';
+  initGame();
+});
+
+// Initial sprite draw
+drawKen(kenCanvas, 0);
+drawCha(chaCanvas, 0);
+
+// ── iOS TOUCH FIX ──
+(function() {
+  var touchStartX, touchStartY, globalHandled = false;
+  document.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].clientX;
+    touchStartY = e.changedTouches[0].clientY;
+  }, {passive: true});
+
+  document.addEventListener('touchend', function(e) {
+    var t = e.changedTouches[0];
+    var dx = Math.abs(t.clientX - touchStartX);
+    var dy = Math.abs(t.clientY - touchStartY);
+    if (dx > 10 || dy > 10) return;
+
+    var btn = e.target.closest('button');
+    // Only handle dynamically created game buttons (not the static overlay ones handled by bindBtn)
+    if (btn && !btn.disabled && !['bday-btn','start-btn','replay-btn'].includes(btn.id)) {
+      e.preventDefault();
+      if (globalHandled) return;
+      globalHandled = true;
+      setTimeout(() => globalHandled = false, 600);
+      btn.click();
+    }
+  }, {passive: false});
+})();
+</script>
+</body>
+</html>
